@@ -9,10 +9,15 @@ class CalculatorApp extends StatefulWidget {
 
 class _CalculatorViewState extends State<CalculatorApp> {
   final _textController = TextEditingController();
+  final _key = GlobalKey<FormState>();
+  double first = 0;
+  double second = 0;
+  String operator = "";
+
   List<String> lstSymbols = [
     "C",
-    "*",
     "/",
+    "*",
     "<-",
     "1",
     "2",
@@ -25,23 +30,72 @@ class _CalculatorViewState extends State<CalculatorApp> {
     "7",
     "8",
     "9",
-    "*",
     "%",
     "0",
     ".",
-    "=",
+    "="
   ];
 
-  final _key = GlobalKey<FormState>();
-  int first = 0; // First operand
-  int second = 0; // Second operand
-  String operator = ""; // Store the operator
+  void _onButtonPressed(String symbol) {
+    setState(() {
+      if (symbol == "C") {
+        first = 0;
+        second = 0;
+        operator = "";
+        _textController.text = "";
+      } else if (symbol == "<-") {
+        if (_textController.text.isNotEmpty) {
+          _textController.text = _textController.text
+              .substring(0, _textController.text.length - 1);
+        }
+      } else if (symbol == "=") {
+        if (operator.isNotEmpty && _textController.text.isNotEmpty) {
+          second = double.tryParse(_textController.text) ?? 0;
+          double result = _calculateResult();
+
+          // Format result to avoid decimal if it's a whole number
+          _textController.text =
+              result % 1 == 0 ? result.toInt().toString() : result.toString();
+
+          first = result;
+          operator = "";
+          second = 0;
+        }
+      } else if (symbol == "+" ||
+          symbol == "-" ||
+          symbol == "*" ||
+          symbol == "/") {
+        if (_textController.text.isNotEmpty) {
+          first = double.tryParse(_textController.text) ?? 0;
+          operator = symbol;
+          _textController.text = "";
+        }
+      } else {
+        _textController.text += symbol;
+      }
+    });
+  }
+
+  double _calculateResult() {
+    switch (operator) {
+      case "+":
+        return first + second;
+      case "-":
+        return first - second;
+      case "*":
+        return first * second;
+      case "/":
+        return second != 0 ? first / second : 0; // Division with check for zero
+      default:
+        return 0;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calculator App'),
+        title: const Text("Calculator App"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -49,7 +103,7 @@ class _CalculatorViewState extends State<CalculatorApp> {
           key: _key,
           child: Column(
             children: [
-              TextFormField(
+              TextField(
                 textDirection: TextDirection.rtl,
                 controller: _textController,
                 decoration: const InputDecoration(
@@ -57,8 +111,8 @@ class _CalculatorViewState extends State<CalculatorApp> {
                 ),
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
                 ),
+                readOnly: true,
               ),
               const SizedBox(
                 height: 8,
@@ -67,70 +121,24 @@ class _CalculatorViewState extends State<CalculatorApp> {
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 4,
-                    crossAxisSpacing: 8.0,
-                    mainAxisSpacing: 8.0,
+                    crossAxisSpacing: 10.0,
+                    mainAxisSpacing: 12.0,
                   ),
                   itemCount: lstSymbols.length,
                   itemBuilder: (context, index) {
                     return ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.lightGreen,
+                        backgroundColor: Colors.green,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(0),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
-                        String symbol = lstSymbols[index];
-                        if (symbol == "C") {
-                          _textController.clear();
-                          first = second = 0;
-                          operator = "";
-                        } else if (symbol == "<-") {
-                          _textController.text = _textController.text.isNotEmpty
-                              ? _textController.text
-                                  .substring(0, _textController.text.length - 1)
-                              : "";
-                        } else if (symbol == "=") {
-                          second = int.parse(_textController.text);
-                          switch (operator) {
-                            case "+":
-                              _textController.text =
-                                  (first + second).toString();
-                              break;
-                            case "-":
-                              _textController.text =
-                                  (first - second).toString();
-                              break;
-                            case "*":
-                              _textController.text =
-                                  (first * second).toString();
-                              break;
-                            case "/":
-                              _textController.text = second != 0
-                                  ? (first / second).toString()
-                                  : "Error";
-                              break;
-                            default:
-                              _textController.text = "Error";
-                          }
-                          operator = ""; // Reset operator after calculation
-                          first = second = 0;
-                        } else if (symbol == "+" ||
-                            symbol == "-" ||
-                            symbol == "*" ||
-                            symbol == "/") {
-                          first = int.parse(_textController.text);
-                          operator = symbol; // Set the operator
-                          _textController.clear();
-                        } else {
-                          _textController.text += symbol;
-                        }
-                      },
+                      onPressed: () => _onButtonPressed(lstSymbols[index]),
                       child: Text(
                         lstSymbols[index],
                         style: const TextStyle(
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                       ),
                     );
